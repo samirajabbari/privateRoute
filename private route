@@ -1,0 +1,80 @@
+---dashboard
+<PrivateRoute roles={["admin"]}>
+            <Link href={`/dashboard/usermanagment`}>
+              <article className="p-4 border border-neutral-200 bg-white/80 dark:bg-black/80 rounded-md cursor-pointer select-none shadow-sm">
+                <figure className="flex flex-col gap-1 items-center">
+                  <UserCircleIcon className="w-11 h-11 text-primary-dark" />
+                  <figcaption className="text-xs font-medium line-clamp-1">
+                    مدیریت کاربران
+                  </figcaption>
+                </figure>
+              </article>
+            </Link>
+          </PrivateRoute>
+--------------private route Component
+import React, { useContext, useEffect, useLayoutEffect } from "react";
+import AppContext from "../../contexts/AppContext";
+import { useRouter } from "next/router";
+import jwt from "jsonwebtoken";
+
+function PrivateRoute({ roles, permision, children }) {
+  const { appState } = useContext(AppContext);
+  const router = useRouter();
+  const decodedRoles = jwt.decode(appState?.auth?.token)?.roles;
+  useEffect(() => {
+    if (!roles.includes(...decodedRoles)) {
+      router.push("/dashboard");
+    }
+  }, [router.pathname]);
+  return (
+    <>{decodedRoles && roles.includes(...decodedRoles) ? children : null}</>
+  );
+}
+
+export default PrivateRoute;
+--------------urlPrivateComponent-------------
+import React, { useContext } from "react";
+import AppContext from "../../contexts/AppContext";
+import jwt from "jsonwebtoken";
+import Dashboard from "../../pages/dashboard";
+
+const withAccess = (roles, permissions, Component) => {
+  const Access = (props) => {
+    const context = useContext(AppContext);
+    const decodedRoles = jwt.decode(context?.appState?.auth?.token)?.roles;
+
+    if (Array.isArray(decodedRoles) && !roles.includes(...decodedRoles))
+      return <Dashboard />;
+
+    return <Component {...props} />;
+  };
+  return Access;
+};
+
+export default withAccess;
+-----------------------------------
+use url private route
+import React, { useContext } from "react";
+import InFoCard from "../../../components/Card";
+import AppContext from "../../../contexts/AppContext";
+import withAccess from "../../../components/withAccess";
+
+function index() {
+  const appState = useContext(AppContext);
+  console.log(appState);
+  return (
+    <div
+      style={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "1rem",
+      }}
+    >
+      <InFoCard />
+    </div>
+  );
+}
+
+export default withAccess(["admin"], [], index);
